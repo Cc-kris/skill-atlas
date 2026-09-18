@@ -1,0 +1,20 @@
+hosts:
+  codex:
+    env: CODEX_HOME
+    env_points_to_home: true
+    default_roots: ["~/.codex/skills"]
+  claude-code:
+    env: CLAUDE_CODE_HOME
+    default_roots: ["~/.claude/skills"]
+  workbuddy:
+    env: WORKBUDDY_SKILLS_DIR
+    default_roots: ["~/.workbuddy/skills"]
+  opencode:
+    env: OPENCODE_SKILLS_DIR
+    default_roots: ["~/.config/opencode/skills", "~/.opencode/skills"]
+  generic:
+    env: SKILL_ATLAS_ROOT
+    default_roots: []
+policy:
+  excluded_directory_names: [auth, credentials, history, cache, backup, backups, .git, node_modules]
+  scan_files: [SKILL.md, skill.json]

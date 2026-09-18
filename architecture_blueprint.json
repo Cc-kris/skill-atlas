@@ -1,0 +1,17 @@
+{
+  "project_name": "skill-scanner",
+  "last_updated_version": "v1.0",
+  "last_updated_date": "2026-09-16",
+  "tech_stack": {"frontend": ["inline SVG", "vanilla JavaScript", "CSS"], "backend": ["Python 3"], "database": [], "infrastructure": []},
+  "modules": [
+    {"path": "skill-atlas/scripts/host_adapters.py", "purpose": "host detection and allowlisted roots"},
+    {"path": "skill-atlas/scripts/scanner.py", "purpose": "safe skill discovery"},
+    {"path": "skill-atlas/scripts/metadata.py", "purpose": "frontmatter and fallback extraction"},
+    {"path": "skill-atlas/scripts/classifier.py", "purpose": "dynamic deterministic hierarchy"},
+    {"path": "skill-atlas/scripts/build_html.py", "purpose": "offline interactive renderer"}
+  ],
+  "apis": [{"path": "skill-atlas/scripts/build_atlas.py", "method": "CLI", "purpose": "build atlas", "module": "build_atlas.py", "status": "active", "introduced_version": "v1.0"}],
+  "database_tables": [],
+  "external_dependencies": [],
+  "tech_debt": [{"issue": "WorkBuddy/OpenCode default roots are configurable placeholders", "impact": "installations with non-standard paths need --root or env", "resolved": false}]
+}

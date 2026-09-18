@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schemaVersion", "host", "roots", "skills", "warnings"],
+  "properties": {
+    "schemaVersion": {"type": "string"},
+    "host": {"type": "string"},
+    "roots": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "object"}},
+    "skills": {"type": "array", "items": {"$ref": "#/$defs/skill"}}
+  },
+  "$defs": {
+    "skill": {
+      "type": "object",
+      "required": ["id", "name", "display_name", "host", "scope", "path", "status", "warnings"],
+      "properties": {
+        "id": {"type": "string"}, "name": {"type": "string"}, "display_name": {"type": "string"},
+        "host": {"type": "string"}, "scope": {"type": "string"}, "path": {"type": "string"},
+        "description": {"type": "string"}, "triggers": {"type": "array", "items": {"type": "string"}},
+        "summary": {"type": "string"}, "headings": {"type": "array", "items": {"type": "string"}},
+        "category": {"type": "string"}, "level": {"type": "integer", "minimum": 1, "maximum": 3},
+        "status": {"enum": ["valid", "warning", "invalid"]}, "warnings": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

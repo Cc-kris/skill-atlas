@@ -1,0 +1,8 @@
+.playwright-cli/
+**/__pycache__/
+*.pyc
+output/install-acceptance/
+output/playwright/
+output/*.json
+output/skill-atlas-check.html
+*.log

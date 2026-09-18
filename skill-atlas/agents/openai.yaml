@@ -1,0 +1,7 @@
+interface:
+  display_name: "Skill Atlas"
+  short_description: "Map installed skills into an offline atlas"
+  brand_color: "#53d6b4"
+  default_prompt: "Use $skill-atlas to generate an offline atlas of the skills installed for this host."
+policy:
+  allow_implicit_invocation: true
