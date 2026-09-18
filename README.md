@@ -2,13 +2,13 @@
 
  > 把散落在本地终端里的 Skill，整理成一张真正看得懂、点得动的技能地图。
 
-[在线预览](output/skill-atlas.html) · [安装为 Codex Skill](skill-atlas/SKILL.md)
+[在线预览](https://cc-kris.github.io/skill-atlas/output/skill-atlas.html) · [安装为 Codex Skill](skill-atlas/SKILL.md)
 
 Skill Atlas 扫描 Codex、Claude Code、WorkBuddy、OpenCode 或自定义目录中的 SKILL.md，整理名称、触发词、分类、中文说明和路径，生成可离线打开的交互式脑图。
 
 ## 预览
 
-打开 [交互式技能地图](output/skill-atlas.html)。页面以当前终端为中心，分类向左右两侧展开；左侧可展开分类，中间可缩放、拖拽脑图，点击 Skill 查看触发词、中文说明和路径。
+打开 [交互式技能地图](https://cc-kris.github.io/skill-atlas/output/skill-atlas.html)。这是可直接操作的网页，不是 GitHub 源码文件页。页面以当前终端为中心，分类向左右两侧展开；左侧可展开分类，中间可缩放、拖拽脑图，点击 Skill 查看触发词、中文说明和路径。
 
 ## 核心能力
 
