@@ -38,9 +38,9 @@ def build(args: argparse.Namespace) -> tuple[Path, Path, dict]:
             cache = json.loads(cache_path.read_text()) if not args.refresh else {}
         except (OSError, ValueError):
             cache = {}
-        keys = {s.id: hashlib.sha256(('v3:'+adapter.host_name+s.source_text).encode()).hexdigest() for s in result.skills}
+        keys = {s.id: hashlib.sha256(('v4-trigger-cn:'+adapter.host_name+s.source_text).encode()).hexdigest() for s in result.skills}
         enriched = {s.id: cache[keys[s.id]] for s in result.skills if keys[s.id] in cache}
-        items = [{"id": s.id, "name": s.name, "description": s.description, "source": s.source_text[:16000]} for s in result.skills if s.id not in enriched]
+        items = [{"id": s.id, "name": s.name, "description": s.description, "source_triggers": s.triggers, "source": s.source_text[:16000]} for s in result.skills if s.id not in enriched]
         batches = [items[start:start+8] for start in range(0,len(items),8)]
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures = {pool.submit(enrich_many,b,host=adapter.host_name):b for b in batches}
@@ -62,6 +62,11 @@ def build(args: argparse.Namespace) -> tuple[Path, Path, dict]:
                 generated = str(data.get("summary_cn") or "").strip()
                 if generated:
                     skill.summary = generated
+                translated = data.get("triggers_cn")
+                if isinstance(translated, list):
+                    translated = [str(item).strip() for item in translated if str(item).strip()]
+                    if translated and all(re.search(r'[\u4e00-\u9fff]', item) and len(item) <= 40 for item in translated[:8]):
+                        skill.triggers = list(dict.fromkeys(translated[:8]))
                     # The model improves prose only. Classification remains a
                     # deterministic, inspectable local pass so one run cannot
                     # invent a new top-level theme.
@@ -108,6 +113,11 @@ def valid_enrichment(data: dict) -> bool:
         return False
     text = data.get('summary_cn','')
     if not isinstance(text,str) or len(re.findall(r'[\u4e00-\u9fff]',text)) < 65:
+        return False
+    triggers = data.get('triggers_cn', [])
+    if not isinstance(triggers, list) or not triggers or len(triggers) > 8:
+        return False
+    if any(not isinstance(item, str) or not re.search(r'[\u4e00-\u9fff]', item) or len(item) > 24 or any(token in item for token in ('`', '$', '/', '\\', '<', '>')) for item in triggers):
         return False
     for key in ('category','subcategory'):
         value=data.get(key,'')
