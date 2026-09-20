@@ -36,6 +36,71 @@ class AtlasTests(unittest.TestCase):
             self.assertEqual(record.status, "warning")
             self.assertTrue(record.summary)
 
+    def test_triggers_only_use_explicit_declarations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = make_skill(
+                root,
+                "trigger-source",
+                """---
+name: trigger-source
+description: Trigger extraction test
+---
+# Usage
+Run `$trigger-source` from `scripts/build.py` and inspect `/tmp/output`.
+Triggers: alpha, beta
+When to Use: migration, audit
+""",
+            )
+            record = extract_metadata(file, "generic", root)
+            self.assertEqual(record.triggers, ["alpha", "beta", "migration", "audit"])
+            self.assertNotIn("$trigger-source", record.triggers)
+            self.assertNotIn("scripts/build.py", record.triggers)
+            self.assertNotIn("/tmp/output", record.triggers)
+
+    def test_triggers_read_explicit_use_when_block(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = make_skill(root, "block", """---
+name: block
+description: test
+---
+<Use_When>
+- User requests a complete delivery
+- User says $block
+</Use_When>
+`not-a-trigger`
+""")
+            record = extract_metadata(file, "generic", root)
+            self.assertEqual(record.triggers, ["User requests a complete delivery", "User says $block"])
+
+    def test_triggers_read_routing_language_from_description(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = make_skill(root, "description-routing", """---
+name: description-routing
+description: Build UI from references; also use for image to UI, UI screenshot to code, and mobile prototype.
+---
+# Details
+""")
+            record = extract_metadata(file, "generic", root)
+            self.assertEqual(record.triggers, ["image to UI", "UI screenshot to code", "mobile prototype"])
+
+    def test_triggers_fall_back_to_unmodified_description_sentence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = make_skill(root, "description-fallback", """---
+name: description-fallback
+description: Source-backed release validation for deployment work. This sentence must not become part of the trigger.
+---
+# Details
+`scripts/release.py` and $release are implementation examples.
+""")
+            record = extract_metadata(file, "generic", root)
+            self.assertEqual(record.triggers, ["Source-backed release validation for deployment work."])
+            self.assertNotIn("scripts/release.py", record.triggers)
+            self.assertNotIn("$release", record.triggers)
+
     def test_scanner_excludes_sensitive_dirs_and_keeps_bad_file(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -108,6 +108,49 @@ def _as_list(value: Any) -> list[str]:
     return []
 
 
+def _declared_triggers(body: str) -> list[str]:
+    """Read only explicitly labelled invocation sections from a skill source."""
+    values: list[str] = []
+    inline = re.findall(r"(?im)^\s*(?:trigger(?:s)?|触发词|适用场景|when to use)\s*[:：]\s*(.+)$", body)
+    values.extend(item for line in inline for item in _as_list(line))
+    tagged = re.findall(r"(?is)<(?:use_when|when_to_use|triggers?)>\s*(.*?)\s*</(?:use_when|when_to_use|triggers?)>", body)
+    for block in tagged:
+        values.extend(re.findall(r"(?m)^\s*[-*]\s+(.+?)\s*$", block))
+    headings = re.findall(r"(?im)^#{1,3}\s*(?:when to use|triggers?|触发词|适用场景)\s*$\n(.*?)(?=^#{1,3}\s|\Z)", body)
+    for block in headings:
+        values.extend(re.findall(r"(?m)^\s*[-*]\s+(.+?)\s*$", block))
+    return [re.sub(r"\s+", " ", value).strip() for value in values if value.strip()]
+
+
+def _description_triggers(description: str) -> list[str]:
+    """Extract invocation language explicitly declared in frontmatter prose."""
+    if not description:
+        return []
+    values: list[str] = []
+    # Skill descriptions commonly use these exact routing contracts. Keep the
+    # source wording and split only list-like clauses; never infer from nouns.
+    patterns = (
+        (r"(?is)\b(?:also\s+use\s+for|also\s+trigger\s+for)\s+(.+?)(?=\.\s*(?:[A-Z]|[\u4e00-\u9fff])|$)", True),
+        (r"(?is)\buse\s+when\s+(.+?)(?=\.\s*(?:[A-Z]|[\u4e00-\u9fff])|$)", False),
+        (r"(?is)(?<!also\s)\buse\s+for\s+(.+?)(?=\.\s*(?:[A-Z]|[\u4e00-\u9fff])|$)", False),
+        (r"(?is)(当[^。；;]+(?:时使用|时调用|时启用))", False),
+        (r"(?is)(适用于[^。；;]+)", False),
+    )
+    for pattern, is_list in patterns:
+        for match in re.finditer(pattern, description):
+            clause = match.group(1) if match.lastindex else match.group(0)
+            parts = re.split(r"\s*,\s*|\s+and\s+|\s*、\s*|\s*；\s*|\s*;\s*", clause) if is_list else [clause]
+            values.extend(re.sub(r"^(?:and|or)\s+", "", part.strip(" .，。；;")) for part in parts if part.strip(" .，。；;"))
+    if not values:
+        # A frontmatter description is authored as the skill's routing
+        # contract. Preserve its first sentence as a source-backed scenario
+        # when the author did not use a standard trigger label.
+        first = re.split(r"(?<=[。！？!?])\s*|(?<=\.)\s+(?=[A-Z])", description, maxsplit=1)[0].strip()
+        if first:
+            values.append(first)
+    return values
+
+
 def extract_metadata(path: Path, host: str, root: Path, scope: str = "user") -> SkillRecord:
     warnings: list[str] = []
     try:
@@ -127,21 +170,18 @@ def extract_metadata(path: Path, host: str, root: Path, scope: str = "user") -> 
     description = str(frontmatter.get("description") or "").strip()
     triggers = _as_list(frontmatter.get("triggers", frontmatter.get("trigger")))
     if not triggers:
-        # Keep the source contract honest: triggers are only terms explicitly
-        # declared in frontmatter or marked as invocation cues in the document.
-        trigger_lines = re.findall(r"(?im)^\s*(?:trigger(?:s)?|触发词|适用场景|when to use)\s*[:：]\s*(.+)$", body)
-        triggers = _as_list(trigger_lines)
-    # Extract invocation forms explicitly present in the source, without inventing
-    # phrases: shell-style skill commands and inline code commands are reliable cues.
-    source_cues = re.findall(r"(?<![A-Za-z0-9_])\$[A-Za-z][A-Za-z0-9_-]{1,40}|`[^`\n]{2,80}`", body)
-    for cue in source_cues:
-        cue = cue.strip('`').strip()
-        if cue and cue not in triggers:
-            triggers.append(cue)
+        # Keep the source contract honest: only an explicitly labelled field is
+        # a trigger declaration. Ordinary prose, commands, paths, and examples
+        # are intentionally ignored.
+        triggers = _declared_triggers(body)
+    if not triggers:
+        triggers = _description_triggers(description)
     triggers = list(dict.fromkeys(triggers))[:10]
     if not description:
         description = _first_paragraph(body)
-    summary = _first_paragraph(body) or description
+    # Frontmatter is the routing contract and usually contains the clearest
+    # purpose/when-to-use statement; prefer it over a terse implementation note.
+    summary = description or _first_paragraph(body)
     if not name:
         name = path.parent.name or "unnamed-skill"
         warnings.append("name missing; directory name used")
@@ -156,5 +196,5 @@ def extract_metadata(path: Path, host: str, root: Path, scope: str = "user") -> 
     return SkillRecord(
         id=f"{host}:{relative}", name=name, display_name=name.replace("-", " ").replace("_", " ").title(),
         host=host, scope=scope, path=shown_path, description=description, triggers=triggers,
-        summary="", headings=headings[:12], status=status, warnings=warnings,
+        summary=summary, headings=headings[:12], status=status, warnings=warnings, source_text=text,
     )

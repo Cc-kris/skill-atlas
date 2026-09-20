@@ -15,7 +15,7 @@ Skill Atlas 扫描 Codex、Claude Code、WorkBuddy、OpenCode 或自定义目录
 | 能力 | 说明 |
 | --- | --- |
 | 终端识别 | 支持 Codex、Claude Code、WorkBuddy、OpenCode 和自定义目录 |
-| 真实触发词 | 只从源 Skill 的 frontmatter、触发字段、$命令和反引号命令提取 |
+| 真实触发词 | 只从源 Skill 明确声明的 `trigger(s)`、触发词、适用场景或 `Use_When` 区块提取；命令、路径和代码示例不会被误当成触发词 |
 | 层级分类 | 终端 → 一级分类 → 二级分类 → Skill |
 | 左右脑图 | 以终端为中心向两侧扩散，分支预留间距避免堆叠 |
 | 中文说明 | 使用安装所在终端的默认模型生成 |
@@ -42,7 +42,7 @@ Skill Atlas 扫描 Codex、Claude Code、WorkBuddy、OpenCode 或自定义目录
 | --host | codex、claude-code、workbuddy、opencode 或 generic |
 | --root PATH | generic 模式下指定 Skill 根目录 |
 | --include-project | 同时扫描当前项目的 .agents/skills |
-| --no-ai-label | 不调用本机终端模型，仅生成结构数据 |
+| --no-ai-label | 不调用本机终端模型，只生成本地结构；不产出完整中文说明与语义分类 |
 | --open | 构建完成后尝试打开浏览器 |
 
 ## 安装为 Codex Skill
@@ -66,7 +66,7 @@ Skill Atlas 扫描 Codex、Claude Code、WorkBuddy、OpenCode 或自定义目录
 - 不读取密钥、凭据、历史记录或缓存目录。
 - 生成的 HTML/JSON 可能包含本机路径，公开分享前请确认。
 - 触发词必须能在源文件中找到，不会凭空创造。
-- AI CLI 不可用时可使用 --no-ai-label。
+- AI CLI 生成按批次缓存；中断后再次运行会续传，不会用不完整结果覆盖现有 HTML。
 
 ## 项目结构
 

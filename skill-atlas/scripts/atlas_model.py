@@ -23,9 +23,12 @@ class SkillRecord:
     level: int = 1
     status: str = "valid"
     warnings: list[str] = field(default_factory=list)
+    source_text: str = field(default="", repr=False)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        data.pop("source_text", None)
+        return data
 
 
 @dataclass
