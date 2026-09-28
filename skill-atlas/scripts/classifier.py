@@ -84,7 +84,15 @@ def _family(skill: SkillRecord) -> tuple[str, str]:
         if name_key in terms:
             return family, child
     for family, child, terms in FAMILY_RULES[4:]:
-        if any(term in text for term in terms):
+        # Short English markers such as `ui` must match a token, not an
+        # arbitrary substring (otherwise "build" and "guide" become design).
+        matched = any(
+            re.search(rf"\b{re.escape(term)}\b", text)
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9 _-]*", term)
+            else term in text
+            for term in terms
+        )
+        if matched:
             return family, child
     return "技能管理", "技能整理"
 
@@ -126,6 +134,13 @@ def classify(skills: list[SkillRecord], max_depth: int = 3) -> list[SkillRecord]
     for (category, child), members in sorted(buckets.items()):
         for member in members:
             member.category, member.parent_category, member.level = category, child, 2
+    # Only large families need a second-level taxonomy. Smaller families stay
+    # as a flat category so the sidebar and map do not show meaningless arrows.
+    category_sizes = Counter(skill.category for skill in skills)
+    for member in skills:
+        if category_sizes[member.category] <= 10:
+            member.parent_category = ""
+            member.level = 1
     return sorted(skills, key=lambda item: (item.category.casefold(), item.name.casefold(), item.id))
 
 
